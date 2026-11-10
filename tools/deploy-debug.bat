@@ -5,7 +5,17 @@ setlocal enabledelayedexpansion
 
 set "ADB=adb"
 if exist "D:\Android\Sdk\platform-tools\adb.exe" set "ADB=D:\Android\Sdk\platform-tools\adb.exe"
-if "%JAVA_HOME%"=="" if exist "D:\Android\Android Studio\jbr" set "JAVA_HOME=D:\Android\Android Studio\jbr"
+
+rem --- Pick a valid JDK: use JAVA_HOME only if it really exists, else Android Studio JBR ---
+set "JBR=D:\Android\Android Studio\jbr"
+if defined JAVA_HOME if not exist "%JAVA_HOME%\bin\java.exe" set "JAVA_HOME="
+if not defined JAVA_HOME if exist "%JBR%\bin\java.exe" set "JAVA_HOME=%JBR%"
+if not defined JAVA_HOME (
+  echo [ERROR] No valid JDK found. Install Android Studio, or set JAVA_HOME to a JDK 17+.
+  pause
+  exit /b 1
+)
+echo   Using JAVA_HOME=%JAVA_HOME%
 
 cd /d "%~dp0.."
 
