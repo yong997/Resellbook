@@ -26,4 +26,7 @@ interface OrderDao {
 
     @Query("UPDATE orders SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: Long, status: Int)
+
+    @Query("UPDATE orders SET rebateReturned = 1 WHERE id = :id")
+    suspend fun markRebateReturned(id: Long)
 }

@@ -23,4 +23,7 @@ class OrderRepository(private val dao: OrderDao) {
         }
         dao.updateStatus(id, next)
     }
+
+    /** 标记他人代返的返利已返还 */
+    suspend fun markRebateReturned(id: Long) = dao.markRebateReturned(id)
 }

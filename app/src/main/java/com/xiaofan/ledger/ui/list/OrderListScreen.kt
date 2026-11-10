@@ -89,6 +89,7 @@ fun OrderListScreen(
                             order = order,
                             onClick = { onEdit(order.id) },
                             onToggleStatus = { viewModel.toggleStatus(order) },
+                            onMarkRebateReturned = { viewModel.markRebateReturned(order) },
                             onLongClick = { pendingDelete = order },
                         )
                     }
@@ -127,27 +128,52 @@ private fun SummaryCard(summary: ListSummary) {
             containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp, horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            StatItem(
-                label = "总利润",
-                value = Money.formatYuan(summary.totalProfitCents),
-                valueColor = if (summary.totalProfitCents >= 0) ProfitGreen else LossRed,
-            )
-            StatItem(
-                label = "待收金额",
-                value = Money.formatYuan(summary.pendingReceivableCents),
-            )
-            StatItem(
-                label = "订单数",
-                value = "${summary.orderCount}",
-                sub = if (summary.unsettledCount > 0) "未结 ${summary.unsettledCount}" else null,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StatItem(
+                    label = "总利润",
+                    value = Money.formatYuan(summary.totalProfitCents),
+                    valueColor = if (summary.totalProfitCents >= 0) ProfitGreen else LossRed,
+                )
+                StatItem(
+                    label = "待收金额",
+                    value = Money.formatYuan(summary.pendingReceivableCents),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StatItem(
+                    label = "待收返利",
+                    value = Money.formatYuan(summary.pendingRebateCents),
+                    valueColor = if (summary.pendingRebateCount > 0) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    },
+                    sub = if (summary.pendingRebateCount > 0) {
+                        "${summary.pendingRebateCount} 笔待追"
+                    } else {
+                        null
+                    },
+                )
+                StatItem(
+                    label = "订单数",
+                    value = "${summary.orderCount}",
+                    sub = if (summary.unsettledCount > 0) "未结 ${summary.unsettledCount}" else null,
+                )
+            }
         }
     }
 }
@@ -188,6 +214,7 @@ private fun OrderCard(
     order: OrderEntity,
     onClick: () -> Unit,
     onToggleStatus: () -> Unit,
+    onMarkRebateReturned: () -> Unit,
     onLongClick: () -> Unit,
 ) {
     Card(
@@ -263,6 +290,41 @@ private fun OrderCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+                if (order.isRebatePending) {
+                    Spacer(Modifier.height(6.dp))
+                    val overdueDays = order.rebateDueDate?.let {
+                        ((Dates.todayStart() - Dates.startOfDay(it)) / 86_400_000L).toInt()
+                    } ?: 0
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = buildString {
+                                append("待返返利 ")
+                                append(Money.formatYuan(order.pendingRebateCents))
+                                order.counterparty?.takeIf { it.isNotBlank() }?.let { append(" · $it") }
+                                val due = order.rebateDueDate
+                                if (due != null) {
+                                    if (overdueDays > 0) append(" · 已逾期 ${overdueDays} 天")
+                                    else append(" · 约定 ${Dates.format(due)}")
+                                }
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (overdueDays > 0) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(
+                            onClick = onMarkRebateReturned,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        ) {
+                            Text("标记已返", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
                 }
             }
 

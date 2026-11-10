@@ -139,6 +139,54 @@ fun OrderEditScreen(
                 )
             }
 
+            // 返利来源：自己账号（必然到账） / 他人代返（需追讨）
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("返利由他人代返", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "开启后需向对方追讨，会进入「待收返利」",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = state.rebateFromOther,
+                    onCheckedChange = viewModel::onRebateFromOtherChange,
+                )
+            }
+
+            if (state.rebateFromOther) {
+                OutlinedTextField(
+                    value = state.counterparty,
+                    onValueChange = viewModel::onCounterpartyChange,
+                    label = { Text("对方称呼（选填）") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                DateField(
+                    label = "约定返还日期（选填）",
+                    dateMillis = state.rebateDueDate,
+                    onChange = viewModel::onRebateDueDateChange,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "对方已返还",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Switch(
+                        checked = state.rebateReturned,
+                        onCheckedChange = viewModel::onRebateReturnedChange,
+                    )
+                }
+            }
+
             MoneyField(
                 label = "快递费(元/单)",
                 value = state.shipping,
@@ -302,4 +350,52 @@ private fun MoneyField(
         supportingText = error?.let { { Text(it) } },
         modifier = modifier,
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateField(
+    label: String,
+    dateMillis: Long?,
+    onChange: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var show by remember { mutableStateOf(false) }
+
+    OutlinedButton(onClick = { show = true }, modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = if (dateMillis != null) Dates.format(dateMillis) else "未设置",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+
+    if (show) {
+        val pickerState = rememberDatePickerState(
+            initialSelectedDateMillis = Dates.toPickerMillis(dateMillis ?: Dates.todayStart()),
+        )
+        DatePickerDialog(
+            onDismissRequest = { show = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { onChange(Dates.fromPickerMillis(it)) }
+                    show = false
+                }) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { show = false }) { Text("取消") }
+            },
+        ) {
+            DatePicker(state = pickerState)
+        }
+    }
 }

@@ -31,6 +31,14 @@ data class EditFormState(
     val actualSellPrice: String = "",
     /** 快递单号（填写即代表已寄出） */
     val trackingNumber: String = "",
+    /** 返利由他人代返（需追讨） */
+    val rebateFromOther: Boolean = false,
+    /** 对方称呼（选填） */
+    val counterparty: String = "",
+    /** 约定返还日期（选填） */
+    val rebateDueDate: Long? = null,
+    /** 对方是否已返还 */
+    val rebateReturned: Boolean = false,
     val date: Long = Dates.todayStart(),
     val remark: String = "",
     val settled: Boolean = false,
@@ -59,6 +67,10 @@ data class EditFormState(
         get() = Profit.grossProfitCents(
             actualSellCents, costPriceCents, rebateCents, shippingCents, quantityInt
         )
+
+    /** 待收返利（元，用于预览） */
+    val pendingRebateCents: Long
+        get() = if (rebateFromOther && !rebateReturned) rebateCents * quantityInt else 0L
 }
 
 class OrderEditViewModel(
@@ -98,6 +110,10 @@ class OrderEditViewModel(
                 shipping = Money.centsToPlainString(order.shippingFeeCents),
                 actualSellPrice = Money.centsToPlainString(order.actualSellPriceCents),
                 trackingNumber = order.trackingNumber ?: "",
+                rebateFromOther = order.rebateSource == OrderEntity.REBATE_SOURCE_OTHER,
+                counterparty = order.counterparty ?: "",
+                rebateDueDate = order.rebateDueDate,
+                rebateReturned = order.rebateReturned,
                 date = order.date,
                 remark = order.remark,
                 settled = order.isSettled,
@@ -123,6 +139,18 @@ class OrderEditViewModel(
 
     fun onTrackingNumberChange(value: String) =
         _state.update { it.copy(trackingNumber = value) }
+
+    fun onRebateFromOtherChange(value: Boolean) =
+        _state.update { it.copy(rebateFromOther = value) }
+
+    fun onCounterpartyChange(value: String) =
+        _state.update { it.copy(counterparty = value) }
+
+    fun onRebateDueDateChange(value: Long) =
+        _state.update { it.copy(rebateDueDate = value) }
+
+    fun onRebateReturnedChange(value: Boolean) =
+        _state.update { it.copy(rebateReturned = value) }
 
     fun onDateChange(value: Long) = _state.update { it.copy(date = value) }
     fun onRemarkChange(value: String) = _state.update { it.copy(remark = value) }
@@ -169,6 +197,14 @@ class OrderEditViewModel(
                 shippingFeeCents = s.shippingCents,
                 actualSellPriceCents = s.actualSellCents,
                 trackingNumber = s.trackingNumber.trim().ifBlank { null },
+                rebateSource = if (s.rebateFromOther) {
+                    OrderEntity.REBATE_SOURCE_OTHER
+                } else {
+                    OrderEntity.REBATE_SOURCE_SELF
+                },
+                rebateReturned = if (s.rebateFromOther) s.rebateReturned else false,
+                counterparty = if (s.rebateFromOther) s.counterparty.trim().ifBlank { null } else null,
+                rebateDueDate = if (s.rebateFromOther) s.rebateDueDate else null,
                 status = if (s.settled) {
                     OrderEntity.STATUS_SETTLED
                 } else {

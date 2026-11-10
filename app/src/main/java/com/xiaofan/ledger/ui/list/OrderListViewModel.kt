@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 data class ListSummary(
     val totalProfitCents: Long = 0L,
     val pendingReceivableCents: Long = 0L,
+    val pendingRebateCents: Long = 0L,
+    val pendingRebateCount: Int = 0,
     val orderCount: Int = 0,
     val unsettledCount: Int = 0,
 )
@@ -36,6 +38,8 @@ class OrderListViewModel(app: Application) : AndroidViewModel(app) {
                     totalProfitCents = list.sumOf { it.grossProfitCents },
                     pendingReceivableCents = list.filter { !it.isSettled }
                         .sumOf { it.totalSellPriceCents },
+                    pendingRebateCents = list.sumOf { it.pendingRebateCents },
+                    pendingRebateCount = list.count { it.isRebatePending },
                     orderCount = list.size,
                     unsettledCount = list.count { !it.isSettled },
                 ),
@@ -50,6 +54,10 @@ class OrderListViewModel(app: Application) : AndroidViewModel(app) {
 
     fun toggleStatus(order: OrderEntity) = viewModelScope.launch {
         repository.toggleStatus(order.id, order.status)
+    }
+
+    fun markRebateReturned(order: OrderEntity) = viewModelScope.launch {
+        repository.markRebateReturned(order.id)
     }
 
     fun delete(order: OrderEntity) = viewModelScope.launch {
