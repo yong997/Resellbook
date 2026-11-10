@@ -21,10 +21,16 @@ data class EditFormState(
     val loaded: Boolean = false,
     val title: String = "",
     val quantity: String = "1",
+    /** 进货单价（元/件） */
     val costPrice: String = "",
+    /** 单件返利（元/件） */
     val rebate: String = "",
+    /** 快递费总额（元/单） */
     val shipping: String = "",
+    /** 实际卖价单价（元/件） */
     val actualSellPrice: String = "",
+    /** 快递单号（填写即代表已寄出） */
+    val trackingNumber: String = "",
     val date: Long = Dates.todayStart(),
     val remark: String = "",
     val settled: Boolean = false,
@@ -36,16 +42,23 @@ data class EditFormState(
     val shippingError: String? = null,
     val actualSellPriceError: String? = null,
 ) {
+    val quantityInt: Int get() = quantity.toIntOrNull()?.coerceAtLeast(0) ?: 0
+
     val costPriceCents: Long get() = Money.parseYuanToCents(costPrice) ?: 0L
     val rebateCents: Long get() = Money.parseYuanToCents(rebate) ?: 0L
     val shippingCents: Long get() = Money.parseYuanToCents(shipping) ?: 0L
     val actualSellCents: Long get() = Money.parseYuanToCents(actualSellPrice) ?: 0L
 
     val totalCostCents: Long
-        get() = Profit.totalCostCents(costPriceCents, rebateCents, shippingCents)
+        get() = Profit.totalCostCents(costPriceCents, rebateCents, shippingCents, quantityInt)
+
+    val totalSellCents: Long
+        get() = Profit.totalSellCents(actualSellCents, quantityInt)
 
     val grossProfitCents: Long
-        get() = Profit.grossProfitCents(actualSellCents, costPriceCents, rebateCents, shippingCents)
+        get() = Profit.grossProfitCents(
+            actualSellCents, costPriceCents, rebateCents, shippingCents, quantityInt
+        )
 }
 
 class OrderEditViewModel(
@@ -84,6 +97,7 @@ class OrderEditViewModel(
                 rebate = Money.centsToPlainString(order.rebateCents),
                 shipping = Money.centsToPlainString(order.shippingFeeCents),
                 actualSellPrice = Money.centsToPlainString(order.actualSellPriceCents),
+                trackingNumber = order.trackingNumber ?: "",
                 date = order.date,
                 remark = order.remark,
                 settled = order.isSettled,
@@ -106,6 +120,9 @@ class OrderEditViewModel(
 
     fun onActualSellPriceChange(value: String) =
         _state.update { it.copy(actualSellPrice = value, actualSellPriceError = null) }
+
+    fun onTrackingNumberChange(value: String) =
+        _state.update { it.copy(trackingNumber = value) }
 
     fun onDateChange(value: Long) = _state.update { it.copy(date = value) }
     fun onRemarkChange(value: String) = _state.update { it.copy(remark = value) }
@@ -151,6 +168,7 @@ class OrderEditViewModel(
                 rebateCents = s.rebateCents,
                 shippingFeeCents = s.shippingCents,
                 actualSellPriceCents = s.actualSellCents,
+                trackingNumber = s.trackingNumber.trim().ifBlank { null },
                 status = if (s.settled) {
                     OrderEntity.STATUS_SETTLED
                 } else {

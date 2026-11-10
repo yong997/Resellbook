@@ -113,7 +113,7 @@ fun OrderEditScreen(
                 OutlinedTextField(
                     value = state.actualSellPrice,
                     onValueChange = viewModel::onActualSellPriceChange,
-                    label = { Text("实际卖价(元)") },
+                    label = { Text("实际卖价(元/件)") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = state.actualSellPriceError != null,
@@ -124,14 +124,14 @@ fun OrderEditScreen(
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 MoneyField(
-                    label = "进货总价(元)",
+                    label = "进货单价(元/件)",
                     value = state.costPrice,
                     onValueChange = viewModel::onCostPriceChange,
                     error = state.costPriceError,
                     modifier = Modifier.weight(1f),
                 )
                 MoneyField(
-                    label = "总返利(元)",
+                    label = "单件返利(元/件)",
                     value = state.rebate,
                     onValueChange = viewModel::onRebateChange,
                     error = state.rebateError,
@@ -140,10 +140,19 @@ fun OrderEditScreen(
             }
 
             MoneyField(
-                label = "快递费(元)",
+                label = "快递费(元/单)",
                 value = state.shipping,
                 onValueChange = viewModel::onShippingChange,
                 error = state.shippingError,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            OutlinedTextField(
+                value = state.trackingNumber,
+                onValueChange = viewModel::onTrackingNumberChange,
+                label = { Text("快递单号") },
+                singleLine = true,
+                supportingText = { Text("填写快递单号即视为已寄出，留空表示未寄出") },
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -204,6 +213,19 @@ fun OrderEditScreen(
                         )
                         Text(
                             text = Money.formatYuan(state.totalCostCents),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "总卖价",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                        Text(
+                            text = Money.formatYuan(state.totalSellCents),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,

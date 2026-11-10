@@ -227,7 +227,7 @@ private fun OrderCard(
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "卖价 ",
+                        text = "单价 ",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -246,6 +246,22 @@ private fun OrderCard(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = if (order.grossProfitCents >= 0) ProfitGreen else LossRed,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                if (order.isShipped) {
+                    Text(
+                        text = "已寄出 · ${order.trackingNumber}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } else {
+                    Text(
+                        text = "未寄出",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

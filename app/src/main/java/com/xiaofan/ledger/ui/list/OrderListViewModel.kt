@@ -35,7 +35,7 @@ class OrderListViewModel(app: Application) : AndroidViewModel(app) {
                 summary = ListSummary(
                     totalProfitCents = list.sumOf { it.grossProfitCents },
                     pendingReceivableCents = list.filter { !it.isSettled }
-                        .sumOf { it.actualSellPriceCents },
+                        .sumOf { it.totalSellPriceCents },
                     orderCount = list.size,
                     unsettledCount = list.count { !it.isSettled },
                 ),
