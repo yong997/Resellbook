@@ -73,6 +73,14 @@ gradlew.bat :app:testDebugUnitTest
 
 产物：`app/build/outputs/apk/debug/app-debug.apk`
 
+## 部署到手机（免手动传 APK）
+
+电脑连手机热点、没有 Wi‑Fi 也能用（同处手机热点局域网）。
+
+- 首次配对：双击 `tools\pair-wireless.bat`，按手机「无线调试 → 使用配对码配对设备」显示的 IP:端口 和配对码输入。
+- 以后每次更新：双击 `tools\deploy-debug.bat`，自动「编译 → 连接手机 → 覆盖安装 → 启动」。
+- 详细步骤见 [docs/无线一键安装.md](docs/无线一键安装.md)。
+
 ## 说明
 
 - 数据仅保存在本机 App 私有目录（`resellbook.db`），卸载即清除。
